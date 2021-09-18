@@ -10,34 +10,15 @@ namespace EightPuzzle.Components
     {
         [Parameter]
         public bool AllowShuffle { get; set; } = false;
+        [Parameter]
+        public bool AllowDrag { get; set; } = true;
+        [Parameter]
+        public List<List<Tile>> Rows { get; set; }
+        [Parameter]
+        public EventCallback<List<List<Tile>>> RowsChanged { get; set; }
+
         private int CurrentIndex;
         private int CurrentRow;
-        private List<List<Tile>> Rows;
-
-        public PuzzleTable()
-        {
-            Rows = new List<List<Tile>>
-            {
-                new List<Tile>
-                {
-                    new Tile() { Value = 1, Color = "bisque" },
-                    new Tile() { Value = 2, Color = "aquamarine" },
-                    new Tile() { Value = 3, Color = "darksalmon" }
-                },
-                new List<Tile>
-                {
-                    new Tile() { Value = 4, Color = "cadetblue" },
-                    new Tile() { Value = 5, Color = "gainsboro" },
-                    new Tile() { Value = 6, Color = "greenyellow" }
-                },
-                new List<Tile>
-                {
-                    new Tile() { Value = 7, Color = "goldenrod" },
-                    new Tile() { Value = 8, Color = "palegreen" },
-                    new Tile() { Value = 0, Color = "deepskyblue" }
-                }
-            };
-        }
 
         private void ResetSelectedValues()
         {
@@ -91,6 +72,7 @@ namespace EightPuzzle.Components
                 }
                 #endregion
 
+                #region Swap Tiles
                 var currentTile = Rows.ElementAt(currentRow)
                     .ElementAt(currentIndex);
 
@@ -99,17 +81,7 @@ namespace EightPuzzle.Components
 
                 Rows[newRow][newIndex] = currentTile;
                 Rows[currentRow][currentIndex] = destinationTile;
-
-                foreach (var row in Rows)
-                {
-                    foreach (var tile in row)
-                    {
-                        Console.Write($"{tile.Value} ");
-                    }
-                    Console.Write("\n");
-                }
-
-                Console.WriteLine("-------");
+                #endregion
             }
 
             StateHasChanged();
