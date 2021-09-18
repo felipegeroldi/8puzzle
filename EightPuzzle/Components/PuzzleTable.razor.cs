@@ -102,21 +102,30 @@ namespace EightPuzzle.Components
         {
             if (destinationTile is not null && CurrentRow > 0)
             {
+                CurrentRow -= 1;
                 int destinationIndex = -1, destinationRow = 0;
                 for (; destinationIndex < 0 && destinationRow < Rows.Count; destinationRow++)
                 {
                     var row = Rows.ElementAt(destinationRow);
                     destinationIndex = row.FindIndex(t => t.Value == destinationTile.Value);
                 }
+                destinationRow -= 1;
 
-                var currentTile = Rows.ElementAt(CurrentRow - 1)
+                int rowCost = Math.Abs(CurrentRow - destinationRow);
+                int indexCost = Math.Abs(CurrentIndex - destinationIndex);
+
+                var currentTile = Rows.ElementAt(CurrentRow)
                     .ElementAt(CurrentIndex);
 
-                Rows[CurrentRow - 1][CurrentIndex] = destinationTile;
-                Rows[destinationRow - 1][destinationIndex] = currentTile;
+                if (rowCost <= 1 && indexCost <= 1 &&  rowCost != indexCost && (currentTile.Value == 0 || destinationTile.Value == 0))
+                {
+                    Rows[CurrentRow][CurrentIndex] = destinationTile;
+                    Rows[destinationRow][destinationIndex] = currentTile;
+
+                    StateHasChanged();
+                }
 
                 ResetSelectedValues();
-                StateHasChanged();
             }
         }
     }

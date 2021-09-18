@@ -18,7 +18,6 @@ namespace EightPuzzle.Components
         public EventCallback<List<List<Tile>>> FinalStateChanged { get; set; }
         private Func<List<List<Tile>>, List<List<Tile>>, int> Heuristic;
         private List<List<List<Tile>>> Trail;
-        private List<List<List<Tile>>> VisitedStates;
         private int AcumulatedCost;
 
         private void AStar()
@@ -30,28 +29,40 @@ namespace EightPuzzle.Components
             List<List<List<Tile>>> possibilities;
             List<List<Tile>> proposedState = null;
             Trail = new List<List<List<Tile>>>();
-            VisitedStates = new List<List<List<Tile>>>();
             AcumulatedCost = 0;
+
             #region Setting up the Heuristic Function
             Heuristic = ((state, goal) =>
             {
-                int tilesInWrongPosition = 0;
+                int tilesOutOfPosition = 0;
+                int indexFound;
 
-                for(int i = 0; i<state.Count; i++)
+                for (int i = 0; i<state.Count; i++)
                 {
                     for(int j = 0; j<state.ElementAt(i).Count; j++)
                     {
-                        if (state.ElementAt(i).ElementAt(j) != goal.ElementAt(i).ElementAt(j))
-                            tilesInWrongPosition++;
+                        indexFound = -1;
+                        int k = 0;
+                        // Searching tile in goal panel
+                        for (; k < state.Count && indexFound < 0; k++)
+                        {
+                            indexFound = state.ElementAt(k).FindIndex(t => t.Value == state.ElementAt(i).ElementAt(j).Value);
+                        }
+                        k -= 1;
+
+                        tilesOutOfPosition += Math.Abs(i - k);
+                        tilesOutOfPosition += Math.Abs(j - indexFound);
+
                     }
                 }
 
-                return tilesInWrongPosition;
+                return tilesOutOfPosition;
             });
             #endregion
 
             while(!PuzzleTablesIsEquals(state, goal))
             {
+                costs = new List<int>();
                 possibilities = new List<List<List<Tile>>>();
                 currentRow = 0;
                 currentIndex = -1;
@@ -73,10 +84,8 @@ namespace EightPuzzle.Components
                     var tileSwap = proposedState.ElementAt(currentRow).ElementAt(tempPos);
 
                     SwapTiles(tileZero, tileSwap);
-                    if (!IsInTrail(proposedState) && !Visited(proposedState))
+                    if (!IsInTrail(proposedState))
                         possibilities.Add(proposedState);
-
-                    Visited(state);
                 }
 
                 if (currentIndex - 1 >= 0)
@@ -88,10 +97,8 @@ namespace EightPuzzle.Components
                     var tileSwap = proposedState.ElementAt(currentRow).ElementAt(tempPos);
 
                     SwapTiles(tileZero, tileSwap);
-                    if (!IsInTrail(proposedState) && !Visited(proposedState))
+                    if (!IsInTrail(proposedState))
                         possibilities.Add(proposedState);
-
-                    Visited(state);
                 }
 
                 if (currentRow + 1 < state.Count)
@@ -103,10 +110,8 @@ namespace EightPuzzle.Components
                     var tileSwap = proposedState.ElementAt(tempPos).ElementAt(currentIndex);
 
                     SwapTiles(tileZero, tileSwap);
-                    if (!IsInTrail(proposedState) && !Visited(proposedState))
+                    if (!IsInTrail(proposedState))
                         possibilities.Add(proposedState);
-
-                    Visited(state);
                 }
 
                 if (currentRow - 1 >= 0)
@@ -118,14 +123,11 @@ namespace EightPuzzle.Components
                     var tileSwap = proposedState.ElementAt(tempPos).ElementAt(currentIndex);
 
                     SwapTiles(tileZero, tileSwap);
-                    if (!IsInTrail(proposedState) && !Visited(proposedState))
+                    if (!IsInTrail(proposedState))
                         possibilities.Add(proposedState);
-
-                    Visited(state);
                 }
                 #endregion
                 #region Calculating cost
-                costs = new List<int>();
                 foreach(var possibility in possibilities)
                 {
                     costs.Add(Heuristic(possibility, goal)+AcumulatedCost);
@@ -172,17 +174,6 @@ namespace EightPuzzle.Components
         private bool IsInTrail(List<List<Tile>> state)
         {
             foreach(var oldState in Trail)
-            {
-                if (PuzzleTablesIsEquals(state, oldState))
-                    return true;
-            }
-
-            return false;
-        }
-
-        private bool Visited(List<List<Tile>> state)
-        {
-            foreach (var oldState in VisitedStates)
             {
                 if (PuzzleTablesIsEquals(state, oldState))
                     return true;

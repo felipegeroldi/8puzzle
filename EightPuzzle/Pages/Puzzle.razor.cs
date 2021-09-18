@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Components;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace EightPuzzle.Pages
 {
@@ -9,6 +10,22 @@ namespace EightPuzzle.Pages
     {
         public bool HideSetup { get; set; } = false;
         public bool HideSolution { get; set; } = true;
+
+        public bool VerifyPuzzleTable()
+        {
+            int inversions = 0;
+            for(int i=0; i<InitialState.Count-1;i++)
+            {
+                for(int j=0; i<InitialState.ElementAt(i).Count; j++)
+                {
+                    if (InitialState.ElementAt(i).ElementAt(j).Value > 0 && InitialState.ElementAt(i).ElementAt(j).Value > InitialState.ElementAt(j).ElementAt(i).Value)
+                        inversions++;
+                }
+            }
+
+            return inversions % 2 == 0;
+        }
+
         public List<List<Tile>> InitialState { get; set; } = new List<List<Tile>>
             {
                 new List<Tile>
