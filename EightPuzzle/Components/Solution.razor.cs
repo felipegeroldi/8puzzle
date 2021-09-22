@@ -26,7 +26,11 @@ namespace EightPuzzle.Components
             List<List<Tile>> goal = FinalState;
             int currentRow, currentIndex, tempPos;
             List<int> costs;
+
+            // Priority Queue
             List<List<List<Tile>>> possibilities;
+            // Priority Queue
+
             List<List<Tile>> proposedState = null;
             Trail = new List<List<List<Tile>>>();
             AcumulatedCost = 0;
@@ -35,24 +39,13 @@ namespace EightPuzzle.Components
             Heuristic = ((state, goal) =>
             {
                 int tilesOutOfPosition = 0;
-                int indexFound;
 
                 for (int i = 0; i<state.Count; i++)
                 {
                     for(int j = 0; j<state.ElementAt(i).Count; j++)
                     {
-                        indexFound = -1;
-                        int k = 0;
-                        // Searching tile in goal panel
-                        for (; k < state.Count && indexFound < 0; k++)
-                        {
-                            indexFound = state.ElementAt(k).FindIndex(t => t.Value == state.ElementAt(i).ElementAt(j).Value);
-                        }
-                        k -= 1;
-
-                        tilesOutOfPosition += Math.Abs(i - k);
-                        tilesOutOfPosition += Math.Abs(j - indexFound);
-
+                        if (state.ElementAt(i).ElementAt(j) != goal.ElementAt(i).ElementAt(j))
+                            tilesOutOfPosition++;
                     }
                 }
 
