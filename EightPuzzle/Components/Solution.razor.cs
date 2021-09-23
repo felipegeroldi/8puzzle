@@ -18,135 +18,165 @@ namespace EightPuzzle.Components
         public EventCallback<List<List<Tile>>> FinalStateChanged { get; set; }
         private Func<List<List<Tile>>, List<List<Tile>>, int> Heuristic;
         private List<List<List<Tile>>> Trail;
+        private string selectedAlgorithm;
         private int AcumulatedCost;
+        private int solveStatus = 0;
 
-        private void AStar()
+        private async Task Solve()
         {
-            List<List<Tile>> state = CopyPuzzleTable(InitialState);
-            List<List<Tile>> goal = FinalState;
-            int currentRow, currentIndex, tempPos;
-            List<int> costs;
-
-            // Priority Queue
-            List<List<List<Tile>>> possibilities;
-            // Priority Queue
-
-            List<List<Tile>> proposedState = null;
-            Trail = new List<List<List<Tile>>>();
-            AcumulatedCost = 0;
-
-            #region Setting up the Heuristic Function
-            Heuristic = ((state, goal) =>
+            if (!string.IsNullOrEmpty(selectedAlgorithm))
             {
-                int tilesOutOfPosition = 0;
+                solveStatus = -1;
+                StateHasChanged();
 
-                for (int i = 0; i<state.Count; i++)
+                bool solved = false;
+
+                switch (selectedAlgorithm)
                 {
-                    for(int j = 0; j<state.ElementAt(i).Count; j++)
-                    {
-                        if (state.ElementAt(i).ElementAt(j) != goal.ElementAt(i).ElementAt(j))
-                            tilesOutOfPosition++;
-                    }
+                    case "AStar":
+                        solved = await AStar();
+                        break;
+                    case "Alg2":
+                        break;
                 }
 
-                return tilesOutOfPosition;
-            });
-            #endregion
-
-            while(!PuzzleTablesIsEquals(state, goal))
-            {
-                costs = new List<int>();
-                possibilities = new List<List<List<Tile>>>();
-                currentRow = 0;
-                currentIndex = -1;
-
-                for (; currentIndex < 0 && currentRow < state.Count; currentRow++)
+                if (solved)
                 {
-                    var row = state.ElementAt(currentRow);
-                    currentIndex = row.FindIndex(t => t.Value == 0);
+                    solveStatus = 1;
+                    StateHasChanged();
                 }
-                currentRow -= 1;
-
-                #region Generating Possibilites
-                if (currentIndex + 1 < state.ElementAt(currentRow).Count)
-                {
-                    proposedState = CopyPuzzleTable(state);
-                    tempPos = currentIndex + 1;
-
-                    var tileZero = proposedState.ElementAt(currentRow).ElementAt(currentIndex);
-                    var tileSwap = proposedState.ElementAt(currentRow).ElementAt(tempPos);
-
-                    SwapTiles(tileZero, tileSwap);
-                    if (!IsInTrail(proposedState))
-                        possibilities.Add(proposedState);
-                }
-
-                if (currentIndex - 1 >= 0)
-                {
-                    proposedState = CopyPuzzleTable(state);
-                    tempPos = currentIndex - 1;
-
-                    var tileZero = proposedState.ElementAt(currentRow).ElementAt(currentIndex);
-                    var tileSwap = proposedState.ElementAt(currentRow).ElementAt(tempPos);
-
-                    SwapTiles(tileZero, tileSwap);
-                    if (!IsInTrail(proposedState))
-                        possibilities.Add(proposedState);
-                }
-
-                if (currentRow + 1 < state.Count)
-                {
-                    proposedState = CopyPuzzleTable(state);
-                    tempPos = currentRow + 1;
-
-                    var tileZero = proposedState.ElementAt(currentRow).ElementAt(currentIndex);
-                    var tileSwap = proposedState.ElementAt(tempPos).ElementAt(currentIndex);
-
-                    SwapTiles(tileZero, tileSwap);
-                    if (!IsInTrail(proposedState))
-                        possibilities.Add(proposedState);
-                }
-
-                if (currentRow - 1 >= 0)
-                {
-                    proposedState = CopyPuzzleTable(state);
-                    tempPos = currentRow - 1;
-
-                    var tileZero = proposedState.ElementAt(currentRow).ElementAt(currentIndex);
-                    var tileSwap = proposedState.ElementAt(tempPos).ElementAt(currentIndex);
-
-                    SwapTiles(tileZero, tileSwap);
-                    if (!IsInTrail(proposedState))
-                        possibilities.Add(proposedState);
-                }
-                #endregion
-                #region Calculating cost
-                foreach(var possibility in possibilities)
-                {
-                    costs.Add(Heuristic(possibility, goal)+AcumulatedCost);
-                }
-                #endregion
-
-                #region Selecting the possibility with lower cost
-                int minCostIndex = costs.IndexOf(costs.Min());
-                #endregion
-
-                #region Updating State
-                Trail.Add(state);
-                state = possibilities.ElementAt(minCostIndex);
-                #endregion
-
-                AcumulatedCost++;
-                foreach(var row in state)
-                {
-                    foreach(var tile in row)
-                    {
-                        Console.Write($"{tile.Value} ");
-                    }
-                    Console.Write("\n");
-                }
-                Console.WriteLine("----------");
             }
+        }
+
+        private async Task<bool> AStar()
+        {
+            await Task.Run(() =>
+            {
+                List<List<Tile>> state = CopyPuzzleTable(InitialState);
+                List<List<Tile>> goal = FinalState;
+                int currentRow, currentIndex, tempPos;
+                int totalCost;
+                PriorityQueue<List<List<Tile>>, int> possibilities = new PriorityQueue<List<List<Tile>>, int>();
+
+                List<List<Tile>> proposedState = null;
+                Trail = new List<List<List<Tile>>>();
+                AcumulatedCost = 0;
+
+                #region Setting up the Heuristic Function
+                Heuristic = ((state, goal) =>
+                {
+                    int tilesOutOfPosition = 0;
+
+                    for (int i = 0; i < state.Count; i++)
+                    {
+                        for (int j = 0; j < state.ElementAt(i).Count; j++)
+                        {
+                            if (state.ElementAt(i).ElementAt(j).Value != goal.ElementAt(i).ElementAt(j).Value)
+                                tilesOutOfPosition++;
+                        }
+                    }
+
+                    return tilesOutOfPosition;
+                });
+                #endregion
+
+                while (!PuzzleTablesIsEquals(state, goal))
+                {
+                    currentRow = 0;
+                    currentIndex = -1;
+
+                    for (; currentIndex < 0 && currentRow < state.Count; currentRow++)
+                    {
+                        var row = state.ElementAt(currentRow);
+                        currentIndex = row.FindIndex(t => t.Value == 0);
+                    }
+                    currentRow -= 1;
+
+                    #region Generating Possibilites
+                    if (currentIndex + 1 < state.ElementAt(currentRow).Count)
+                    {
+                        proposedState = CopyPuzzleTable(state);
+                        tempPos = currentIndex + 1;
+
+                        var tileZero = proposedState.ElementAt(currentRow).ElementAt(currentIndex);
+                        var tileSwap = proposedState.ElementAt(currentRow).ElementAt(tempPos);
+
+                        SwapTiles(tileZero, tileSwap);
+                        if (!IsInTrail(proposedState))
+                        {
+                            totalCost = Heuristic(proposedState, goal) + AcumulatedCost;
+                            possibilities.Enqueue(proposedState, totalCost);
+                        }
+                    }
+
+                    if (currentIndex - 1 >= 0)
+                    {
+                        proposedState = CopyPuzzleTable(state);
+                        tempPos = currentIndex - 1;
+
+                        var tileZero = proposedState.ElementAt(currentRow).ElementAt(currentIndex);
+                        var tileSwap = proposedState.ElementAt(currentRow).ElementAt(tempPos);
+
+                        SwapTiles(tileZero, tileSwap);
+                        if (!IsInTrail(proposedState))
+                        {
+                            totalCost = Heuristic(proposedState, goal) + AcumulatedCost;
+                            possibilities.Enqueue(proposedState, totalCost);
+                        }
+                    }
+
+                    if (currentRow + 1 < state.Count)
+                    {
+                        proposedState = CopyPuzzleTable(state);
+                        tempPos = currentRow + 1;
+
+                        var tileZero = proposedState.ElementAt(currentRow).ElementAt(currentIndex);
+                        var tileSwap = proposedState.ElementAt(tempPos).ElementAt(currentIndex);
+
+                        SwapTiles(tileZero, tileSwap);
+                        if (!IsInTrail(proposedState))
+                        {
+                            totalCost = Heuristic(proposedState, goal) + AcumulatedCost;
+                            possibilities.Enqueue(proposedState, totalCost);
+                        }
+                    }
+
+                    if (currentRow - 1 >= 0)
+                    {
+                        proposedState = CopyPuzzleTable(state);
+                        tempPos = currentRow - 1;
+
+                        var tileZero = proposedState.ElementAt(currentRow).ElementAt(currentIndex);
+                        var tileSwap = proposedState.ElementAt(tempPos).ElementAt(currentIndex);
+
+                        SwapTiles(tileZero, tileSwap);
+                        if (!IsInTrail(proposedState))
+                        {
+                            totalCost = Heuristic(proposedState, goal) + AcumulatedCost;
+                            possibilities.Enqueue(proposedState, totalCost);
+                        }
+                    }
+                    #endregion
+
+                    #region Updating State
+                    Trail.Add(state);
+                    state = possibilities.Dequeue();
+                    foreach (var row in state)
+                    {
+                        foreach (var tile in row)
+                        {
+                            Console.Write($"{tile.Value} ");
+                        }
+                        Console.Write("\n");
+                    }
+                    Console.WriteLine("----------");
+                    #endregion
+                }
+
+                Trail.Add(state);
+            }).ConfigureAwait(false);
+
+            return true;
         }
 
         private bool PuzzleTablesIsEquals(List<List<Tile>> state, List<List<Tile>> goal)

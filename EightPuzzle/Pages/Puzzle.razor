@@ -4,22 +4,19 @@
 
 <h3>Definir estados</h3>
 <p>Defina o estados inicial e final do 8 Puzzle.</p>
-
-<div>
-    <div hidden="@HideSetup">
-        <div hidden="@HideSetup">
+<div class="row">
+    <div>
+        <div>
             <Card Title="Estado Inicial">
-                <PuzzleTable @bind-Rows="InitialState" AllowDrag="false" AllowShuffle="true"></PuzzleTable>
+                <PuzzleTable @bind-Rows="InitialState" AllowShuffle="true"></PuzzleTable>
             </Card>
             <Card Title="Estado Final">
-                <PuzzleTable @bind-Rows="FinalState"></PuzzleTable>
+                <PuzzleTable @bind-Rows="FinalState" AllowShuffle="true"></PuzzleTable>
             </Card>
         </div>
-        <div>
-            <button class="btn btn-success" @onclick="Solve">Solucionar</button>
-        </div>
-    </div>
-    <div hidden="@HideSolution">
-        <Solution @bind-InitialState="InitialState" @bind-FinalState="FinalState"></Solution>
     </div>
 </div>
+<div class="row">
+    <Solution @bind-InitialState="InitialState" @bind-FinalState="FinalState"></Solution>
+</div>
+
