@@ -179,6 +179,14 @@ namespace EightPuzzle.Components
             return true;
         }
 
+        private async Task HillClimbing()
+        {
+            Task.Run(() =>
+            {
+
+            }).ConfigureAwait(false);
+        }
+
         private bool PuzzleTablesIsEquals(List<List<Tile>> state, List<List<Tile>> goal)
         {
             bool isEqual = true;
