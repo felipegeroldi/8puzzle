@@ -2,8 +2,8 @@
     <div class="container">
         <select @bind="selectedAlgorithm">
             <option value=""></option>
-            <option value="AStar">A* + Peças fora do lugar</option>
-            <option value="Alg2">Best First + Distância Manhattan</option>
+            <option value="AStar">A* (Peças fora do lugar)</option>
+            <option value="BranchAndBound">Branch and Bound (Custo Acumulado)</option>
         </select>
         <button class="btn btn-warning" @onclick="Solve">Solucionar</button>
     </div>
@@ -12,6 +12,8 @@
     @if(solveStatus == 1)
     {
         int i = 1;
+        <p>Quantidade de passos realizados: @Trail.Count</p>
+        <p>Tempo gasto para a resolução: @elapsedTime.ElapsedMilliseconds ms</p>
         @foreach(var step in Trail)
         {
             var actualStep = step;

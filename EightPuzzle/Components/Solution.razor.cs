@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Components;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -22,11 +23,13 @@ namespace EightPuzzle.Components
         private string selectedAlgorithm;
         private int AcumulatedCost;
         private int solveStatus = 0;
+        private Stopwatch elapsedTime = new Stopwatch();
 
         private async Task Solve()
         {
             if (!string.IsNullOrEmpty(selectedAlgorithm))
             {
+                elapsedTime.Reset();
                 solveStatus = -1;
                 StateHasChanged();
 
@@ -35,14 +38,18 @@ namespace EightPuzzle.Components
                 switch (selectedAlgorithm)
                 {
                     case "AStar":
+                        elapsedTime.Start();
                         solved = await AStar();
                         break;
-                    case "Alg2":
+                    case "BranchAndBound":
+                        elapsedTime.Start();
+                        solved = await BranchAndBound();
                         break;
                 }
 
                 if (solved)
                 {
+                    elapsedTime.Stop();
                     solveStatus = 1;
                     StateHasChanged();
                 }
@@ -162,15 +169,6 @@ namespace EightPuzzle.Components
                     #region Updating State
                     Trail.Add(state);
                     state = possibilities.Dequeue();
-                    foreach (var row in state)
-                    {
-                        foreach (var tile in row)
-                        {
-                            Console.Write($"{tile.Value} ");
-                        }
-                        Console.Write("\n");
-                    }
-                    Console.WriteLine("----------");
                     #endregion
                 }
 
@@ -180,12 +178,125 @@ namespace EightPuzzle.Components
             return true;
         }
 
-        private async Task HillClimbing()
+        private async Task<bool> BranchAndBound()
         {
-            Task.Run(() =>
+            await Task.Run(() =>
             {
+                List<List<Tile>> state = CopyPuzzleTable(InitialState);
+                List<List<Tile>> goal = FinalState;
+                int currentRow, currentIndex, tempPos;
+                PriorityQueue<List<List<Tile>>, int> possibilities = new PriorityQueue<List<List<Tile>>, int>();
 
+                List<List<Tile>> proposedState = null;
+                Trail = new List<List<List<Tile>>>();
+                AcumulatedCost = 0;
+
+                while (!PuzzleTablesIsEquals(state, goal))
+                {
+                    currentRow = 0;
+                    currentIndex = -1;
+
+                    for (; currentIndex < 0 && currentRow < state.Count; currentRow++)
+                    {
+                        var row = state.ElementAt(currentRow);
+                        currentIndex = row.FindIndex(t => t.Value == 0);
+                    }
+                    currentRow -= 1;
+
+                    #region Generating Possibilites
+                    if (currentIndex + 1 < state.ElementAt(currentRow).Count)
+                    {
+                        proposedState = CopyPuzzleTable(state);
+                        tempPos = currentIndex + 1;
+
+                        var tileZero = proposedState.ElementAt(currentRow).ElementAt(currentIndex);
+                        var tileSwap = proposedState.ElementAt(currentRow).ElementAt(tempPos);
+
+                        SwapTiles(tileZero, tileSwap);
+                        if (!IsInTrail(proposedState))
+                        {
+                            possibilities.Enqueue(proposedState, AcumulatedCost+1);
+                        }
+                    }
+
+                    if (currentIndex - 1 >= 0)
+                    {
+                        proposedState = CopyPuzzleTable(state);
+                        tempPos = currentIndex - 1;
+
+                        var tileZero = proposedState.ElementAt(currentRow).ElementAt(currentIndex);
+                        var tileSwap = proposedState.ElementAt(currentRow).ElementAt(tempPos);
+
+                        SwapTiles(tileZero, tileSwap);
+                        if (!IsInTrail(proposedState))
+                        {
+                            possibilities.Enqueue(proposedState, AcumulatedCost);
+                        }
+                    }
+
+                    if (currentRow + 1 < state.Count)
+                    {
+                        proposedState = CopyPuzzleTable(state);
+                        tempPos = currentRow + 1;
+
+                        var tileZero = proposedState.ElementAt(currentRow).ElementAt(currentIndex);
+                        var tileSwap = proposedState.ElementAt(tempPos).ElementAt(currentIndex);
+
+                        SwapTiles(tileZero, tileSwap);
+                        if (!IsInTrail(proposedState))
+                        {
+                            possibilities.Enqueue(proposedState, AcumulatedCost);
+                        }
+                    }
+
+                    if (currentRow - 1 >= 0)
+                    {
+                        proposedState = CopyPuzzleTable(state);
+                        tempPos = currentRow - 1;
+
+                        var tileZero = proposedState.ElementAt(currentRow).ElementAt(currentIndex);
+                        var tileSwap = proposedState.ElementAt(tempPos).ElementAt(currentIndex);
+
+                        SwapTiles(tileZero, tileSwap);
+                        if (!IsInTrail(proposedState))
+                        {
+                            possibilities.Enqueue(proposedState, AcumulatedCost);
+                        }
+                    }
+                    #endregion
+
+                    #region Updating State
+                    Trail.Add(state);
+                    state = possibilities.Dequeue();
+                    #endregion
+                }
+
+                Trail.Add(state);
             }).ConfigureAwait(false);
+
+            return true;
+
+            return true;
+        }
+
+        private (int, int) GetPosition(int value, List<List<Tile>> state)
+        {
+            int x = 0;
+            int y = 0;
+            
+            for (int i = 0; i < state.Count; i++)
+            {
+                for (int j = 0; j < state.ElementAt(i).Count; j++)
+                {
+                    if (state.ElementAt(i).ElementAt(j).Value == value)
+                    {
+                        x = i;
+                        y = j;
+                    }
+                }
+            }
+
+            return (x, y);
         }
 
         private bool PuzzleTablesIsEquals(List<List<Tile>> state, List<List<Tile>> goal)
