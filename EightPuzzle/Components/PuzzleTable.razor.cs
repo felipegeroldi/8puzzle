@@ -43,45 +43,61 @@ namespace EightPuzzle.Components
                     currentIndex = row.FindIndex(t => t.Value == 0);
                 }
                 currentRow -= 1;
+                int sortedOpt = rng.Next(1, 10);
 
-                #region Finding new X Position
-                newIndex = currentIndex;
-
-                // <- Even | Odd ->
-                XSortedDirection = rng.Next(1, 10);
-                if ((XSortedDirection % 2) == 0 && currentIndex + 1 < Rows.ElementAt(currentRow).Count)
+                if (sortedOpt % 2 == 0)
                 {
-                    newIndex += 1;
+                    #region Finding new X Position
+                    newIndex = currentIndex;
+                    // <- Even | Odd ->
+                    XSortedDirection = rng.Next(1, 10);
+                    if ((XSortedDirection % 2) == 0 && currentIndex + 1 < Rows.ElementAt(currentRow).Count)
+                    {
+                        newIndex += 1;
+                    }
+                    else if (currentIndex - 1 >= 0)
+                    {
+                        newIndex -= 1;
+                    }
+                    #endregion
+                    
+                    #region Swap Tiles
+                    var currentTile = Rows.ElementAt(currentRow)
+                        .ElementAt(currentIndex);
+
+                    var destinationTile = Rows.ElementAt(currentRow)
+                        .ElementAt(newIndex);
+                    
+                    Rows[currentRow][newIndex] = currentTile;
+                    Rows[currentRow][currentIndex] = destinationTile;
+                    #endregion
                 }
-                else if (currentIndex - 1 >= 0)
+                else
                 {
-                    newIndex -= 1;
+                    #region Finding new Y Position
+                    newRow = currentRow;
+
+                    // /\ Even | Odd \/
+                    YSortedDirection = rng.Next(1, 10);
+                    if ((YSortedDirection % 2) == 0 && currentRow + 1 < Rows.Count)
+                    {
+                        newRow += 1;
+                    } else if (currentRow - 1 >= 0) {
+                        newRow -= 1;
+                    }
+                    #endregion
+                    
+                    #region Swap Tiles
+                    var currentTile = Rows.ElementAt(currentRow)
+                        .ElementAt(currentIndex);
+
+                    var destinationTile = Rows.ElementAt(newRow)
+                        .ElementAt(currentIndex);
+
+                    Rows[newRow][currentIndex] = currentTile;
+                    Rows[currentRow][currentIndex] = destinationTile;
+                    #endregion
                 }
-                #endregion
-
-                #region Finding new Y Position
-                newRow = currentRow;
-
-                // /\ Even | Odd \/
-                YSortedDirection = rng.Next(1, 10);
-                if ((YSortedDirection % 2) == 0 && currentRow + 1 < Rows.Count)
-                {
-                    newRow += 1;
-                } else if (currentRow - 1 >= 0) {
-                    newRow -= 1;
-                }
-                #endregion
-
-                #region Swap Tiles
-                var currentTile = Rows.ElementAt(currentRow)
-                    .ElementAt(currentIndex);
-
-                var destinationTile = Rows.ElementAt(newRow)
-                    .ElementAt(newIndex);
-
-                Rows[newRow][newIndex] = currentTile;
-                Rows[currentRow][currentIndex] = destinationTile;
-                #endregion
             }
 
             StateHasChanged();
