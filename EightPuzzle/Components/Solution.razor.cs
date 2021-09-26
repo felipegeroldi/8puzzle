@@ -275,8 +275,6 @@ namespace EightPuzzle.Components
             }).ConfigureAwait(false);
 
             return true;
-
-            return true;
         }
 
         private (int, int) GetPosition(int value, List<List<Tile>> state)
